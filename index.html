@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="referrer" content="no-referrer">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="TEBIKI QR">
-  <meta name="format-detection" content="telephone=no">
   <title>TEBIKI QR読取</title>
   <style>
     body {
@@ -15,32 +15,26 @@
       font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
       text-align: center;
     }
-
     .wrap {
       max-width: 780px;
       margin: 0 auto;
       padding: 36px 18px;
     }
-
     .card {
-      background: #ffffff;
+      background: #fff;
       border-radius: 22px;
       padding: 34px 24px;
       box-shadow: 0 3px 16px rgba(0,0,0,0.16);
     }
-
     h1 {
       margin: 8px 0 18px;
       font-size: 36px;
-      line-height: 1.25;
     }
-
     .message {
       font-size: 26px;
       line-height: 1.6;
       margin: 16px 0 26px;
     }
-
     #qrInput {
       width: 92%;
       font-size: 26px;
@@ -49,32 +43,28 @@
       border-radius: 16px;
       text-align: center;
       box-sizing: border-box;
-      background: #ffffff;
+      background: #fff;
     }
-
     #qrInput:focus {
       background: #fffde8;
       outline: none;
       border: 5px solid #111;
     }
-
     .btn {
       display: inline-block;
       margin-top: 22px;
-      padding: 16px 28px;
+      padding: 18px 28px;
       border: none;
       border-radius: 14px;
       background: #222;
       color: #fff;
-      font-size: 21px;
+      font-size: 22px;
       cursor: pointer;
       text-decoration: none;
     }
-
     .btn-blue {
       background: #0b5cad;
     }
-
     .status {
       margin-top: 24px;
       padding: 16px;
@@ -86,7 +76,6 @@
       word-break: break-all;
       text-align: left;
     }
-
     .small {
       margin-top: 18px;
       color: #666;
@@ -94,7 +83,6 @@
       line-height: 1.6;
       text-align: left;
     }
-
     #openLink {
       display: none;
     }
@@ -107,7 +95,7 @@
 
       <div class="message">
         QRコードをスキャンしてください<br>
-        読み取ると動画を開きます
+        読み取った動画リンクを開きます
       </div>
 
       <input
@@ -122,17 +110,16 @@
 
       <br>
       <button class="btn" onclick="ready()">読み取り待機にする</button>
-      <button class="btn btn-blue" onclick="openVideo()">動画を開く</button>
-      <a id="openLink" class="btn btn-blue" href="#" target="_self">リンクで開く</a>
+      <a id="openLink" class="btn btn-blue" href="#" rel="noreferrer noopener">TEBIKI動画を開く</a>
 
       <div class="status" id="status">
         状態：読み取り待機中
       </div>
 
       <div class="small">
-        ※反応しない場合は、入力欄を1回タップしてからQRコードを読み取ってください。<br>
-        ※TEBIKIへのログインが必要な場合は、事前にSafariでTEBIKIへログインしてください。<br>
-        ※iPadのホーム画面に追加すると、アプリのように起動できます。
+        ※この版は、TEBIKIへ移動する時に参照元情報を渡さない設定です。<br>
+        ※QRを読むと「TEBIKI動画を開く」ボタンが表示されます。まずはそのボタンで開けるか確認してください。<br>
+        ※開けた場合、自動起動版へ再調整できます。
       </div>
     </div>
   </div>
@@ -142,20 +129,17 @@
     const status = document.getElementById("status");
     const openLink = document.getElementById("openLink");
     let timer = null;
-    let lastOpened = "";
 
     function ready() {
       input.value = "";
-      lastOpened = "";
       openLink.style.display = "none";
+      openLink.href = "#";
       input.focus();
       status.textContent = "状態：読み取り待機中";
     }
 
     function cleanText(value) {
-      return (value || "")
-        .trim()
-        .replace(/[\r\n\t ]+/g, "");
+      return (value || "").trim().replace(/[\r\n\t ]+/g, "");
     }
 
     function setUrl() {
@@ -164,54 +148,35 @@
       if (!url) {
         status.textContent = "URLが入力されていません。QRコードを読み取ってください。";
         input.focus();
-        return "";
+        return;
       }
 
       if (!(url.startsWith("http://") || url.startsWith("https://"))) {
         status.textContent = "URLではない内容を読み取りました：" + url;
         input.value = "";
         input.focus();
-        return "";
+        return;
       }
 
       openLink.href = url;
       openLink.style.display = "inline-block";
-      status.textContent = "読み取りURL：" + url;
-      return url;
-    }
-
-    function openVideo() {
-      const url = setUrl();
-      if (!url) return;
-
-      if (url === lastOpened) {
-        return;
-      }
-
-      lastOpened = url;
-      status.textContent = "動画を開いています：" + url;
-
-      window.location.href = url;
+      status.textContent = "読み取りURL：" + url + "\n表示された「TEBIKI動画を開く」を押してください。";
     }
 
     input.addEventListener("input", function() {
       clearTimeout(timer);
-      timer = setTimeout(openVideo, 800);
+      timer = setTimeout(setUrl, 500);
     });
 
     input.addEventListener("keydown", function(e) {
       if (e.key === "Enter") {
         e.preventDefault();
         clearTimeout(timer);
-        openVideo();
+        setUrl();
       }
     });
 
     window.addEventListener("load", function() {
-      setTimeout(ready, 600);
-    });
-
-    window.addEventListener("pageshow", function() {
       setTimeout(ready, 600);
     });
 
